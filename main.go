@@ -1,34 +1,23 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
 const nome = "Eduardo"
 const versao = 1.1
-const quantidade_monitoramento = 5
+const quantidade_monitoramento = 3
 const delay = 5
 
 func main() {
 	fmt.Println("Olá, ", nome)
 	fmt.Println("Este programa está na versão", versao)
-
-	var site_escolha string
-	var sites []string
-
-	for {
-		fmt.Print("Qual site(s) deseja monitorar? Digite 0 para sair: ")
-		fmt.Scan(&site_escolha)
-		if site_escolha != "0" {
-			sites = append(sites, site_escolha)
-		} else {
-			fmt.Println("")
-			break
-		}
-	}
 
 	for {
 		fmt.Println("1 - Iniciar Monitoramento")
@@ -41,7 +30,7 @@ func main() {
 
 		switch escolha {
 		case 1:
-			monitoramento(sites)
+			monitoramento()
 		case 2:
 			fmt.Println("Exibindo Logs...")
 		case 0:
@@ -54,9 +43,11 @@ func main() {
 
 }
 
-func monitoramento(sites []string) {
+func monitoramento() {
 	fmt.Println("Monitorando...")
 	fmt.Println("")
+
+	sites := leArquivoSites()
 
 	for i := 0; i < quantidade_monitoramento; i++ {
 		fmt.Println("Teste ", i+1, ":")
@@ -77,11 +68,42 @@ func monitoramento(sites []string) {
 }
 
 func testaSite(site string) {
-	resp, _ := http.Get(site)
+	resp, err := http.Get(site)
 
-	if resp.StatusCode == 200 {
-		fmt.Println("Site:", site, "foi carregado com sucesso!")
+	if err != nil {
+		fmt.Println("Ocorreu um erro:", err)
 	} else {
-		fmt.Println("Site:", site, "está com problemas. Status Code:", resp.StatusCode)
+		if resp.StatusCode == 200 {
+			fmt.Println("Site:", site, "foi carregado com sucesso!")
+		} else {
+			fmt.Println("Site:", site, "está com problemas. Status Code:", resp.StatusCode)
+		}
 	}
+}
+
+func leArquivoSites() []string {
+	var sites []string
+
+	arquivo, err := os.Open("sites.txt")
+
+	if err != nil {
+		fmt.Println("Ocorreu um erro:", err)
+	}
+
+	leitor := bufio.NewReader(arquivo)
+	for {
+		linha, err := leitor.ReadString('\n')
+		linha = strings.TrimSpace(linha)
+
+		sites = append(sites, linha)
+
+		if err == io.EOF {
+
+			break
+		}
+	}
+
+	arquivo.Close()
+
+	return sites
 }
